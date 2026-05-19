@@ -1,0 +1,15 @@
+input_file: "data/interim/llm/raw_concepts_only_2025.csv"
+output_file: "data/interim/llm/normalized_concepts_only_2025.csv"
+clusters_output_file: "data/interim/llm/clusters_only_2025.csv"
+# Path to existing normalization state (null on first run, auto-created)
+state_file: "data/interim/llm/normalization_state.pkl"
+
+columns:
+  id: "id"
+  raw_concepts: "raw_concepts"         # Column with list of concepts stored as string
+
+spacy_model: "en_core_web_sm"
+embedding_model: "all-MiniLM-L6-v2"
+similarity_threshold: 0.92
+batch_size: 256
+return_details: true
