@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-import re
 import pandas as pd
 from typing import Dict, Any
 from tqdm import tqdm
@@ -35,7 +34,9 @@ def prepare_texts(df: pd.DataFrame, config: Dict[str, Any]) -> pd.Series:
     return texts
 
 
-def _extract_openai(params: Dict[str, Any], developer_prompt: str, user_prompt: str) -> str:
+def _extract_openai(
+    params: Dict[str, Any], system_prompt: str, user_prompt: str
+) -> str:
     """
     Extract keywords using OpenAI API.
 
@@ -56,16 +57,19 @@ def _extract_openai(params: Dict[str, Any], developer_prompt: str, user_prompt: 
             f"{params.get('api_key_env', 'OPENAI_API_KEY')}"
         )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
 
     response = client.chat.completions.create(
-        model=params.get("model", "gpt-4o-mini"),
+        model=params.get("model", "openai/gpt-oss-120b"),
         messages=[
-            {"role": "developer", "content": developer_prompt},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         temperature=params.get("temperature", 0.0),
-        reasoning_effort=params.get("reasoning_effort", "low"),
+        extra_body={"reasoning": {"enabled": params.get("reasoning", True)}},
     )
 
     return response.choices[0].message.content
@@ -81,22 +85,23 @@ def llm_extraction(config: Dict[str, Any]) -> pd.DataFrame:
         config: Configuration dictionary loaded from YAML.
 
     Returns:
-        DataFrame with columns: id, title, abstract, concepts.
+        DataFrame with additional columns: concepts.
     """
     logger.info("Starting LLM concept extraction")
 
     # Load parameters
     general = config["general"]
     llm_params = config.get("llm", {})
-    global_top_n = config["concept_extraction"].get("top_n", 10)
+    global_top_n = general.get("top_n", 10)
     top_n = llm_params.get("top_n", global_top_n)
 
     provider = llm_params.get("provider", "openai")
     provider_params = llm_params.get(provider, {})
-    developer_prompt = llm_params.get(
-        "developer_prompt_template",
+    system_prompt = llm_params.get(
+        "system_prompt_template",
         "Extract the most important keywords from text.",
-    )
+    ).format(top_n=top_n)
+
     batch_size = llm_params.get("batch_size", 5)
     delay_between_batches = llm_params.get("delay_between_batches", 1.0)
     max_retries = llm_params.get("max_retries", 3)
@@ -127,7 +132,9 @@ def llm_extraction(config: Dict[str, Any]) -> pd.DataFrame:
     # Extract keywords for each document
     all_concepts = []
 
-    for idx, text in tqdm(enumerate(texts), total=len(texts), desc=f"LLM ({provider}) extraction"):
+    for idx, text in tqdm(
+        enumerate(texts), total=len(texts), desc=f"LLM ({provider}) extraction"
+    ):
         if not text or text.strip() == "":
             all_concepts.append([])
             continue
@@ -136,8 +143,8 @@ def llm_extraction(config: Dict[str, Any]) -> pd.DataFrame:
         success = False
         for attempt in range(max_retries):
             try:
-                raw_response = extract_fn(provider_params, developer_prompt, text)
-                concepts = raw_response.split('\n')
+                raw_response = extract_fn(provider_params, system_prompt, text)
+                concepts = raw_response.split("\n")
                 all_concepts.append(concepts)
                 success = True
                 break
@@ -150,20 +157,16 @@ def llm_extraction(config: Dict[str, Any]) -> pd.DataFrame:
                     time.sleep(retry_delay)
 
         if not success:
-            logger.error(f"LLM extraction failed for document {idx} after {max_retries} attempts")
+            logger.error(
+                f"LLM extraction failed for document {idx} after {max_retries} attempts"
+            )
             all_concepts.append([])
 
         # Rate limiting: pause between batches
         if (idx + 1) % batch_size == 0 and idx < len(texts) - 1:
             time.sleep(delay_between_batches)
 
-    # Build result DataFrame
-    result = pd.DataFrame({
-        general["id_column"]: df[general["id_column"]],
-        general["title_column"]: df[general["title_column"]],
-        general["abstract_column"]: df[general["abstract_column"]],
-        general["output_raw_concepts_column"]: all_concepts,
-    })
+    df[general["output_raw_concepts_column"]] = all_concepts
 
-    logger.info(f"LLM extraction complete. Extracted concepts for {len(result)} documents.")
-    return result
+    logger.info(f"LLM extraction complete. Extracted concepts for {len(df)} documents.")
+    return df

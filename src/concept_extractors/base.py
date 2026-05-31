@@ -21,7 +21,9 @@ def prepare_texts(df: pd.DataFrame, config: Dict[str, Any]) -> pd.Series:
 
     if combine:
         texts = (
-            df[title_col].fillna("").astype(str) + separator + df[abstract_col].fillna("").astype(str)
+            df[title_col].fillna("").astype(str)
+            + separator
+            + df[abstract_col].fillna("").astype(str)
         )
     else:
         texts = df[abstract_col].fillna("").astype(str)

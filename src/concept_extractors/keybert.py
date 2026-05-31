@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Dict, Any, List, Tuple
 from tqdm import tqdm
 
-from concept_extractors.base import prepare_texts
+from src.concept_extractors.base import prepare_texts
 from keybert import KeyBERT
 
 logger = logging.getLogger(__name__)
@@ -76,14 +76,14 @@ def keybert_extraction(config: Dict[str, Any]) -> pd.DataFrame:
         config: Configuration dictionary loaded from YAML.
 
     Returns:
-        DataFrame with columns: id, title, abstract, concepts, concept_scores.
+        DataFrame with additional columns: concepts, concept_scores.
     """
     logger.info("Starting KeyBERT concept extraction")
 
     # Load parameters
     general = config["general"]
     params = config.get("keybert", {})
-    global_top_n = config["concept_extraction"].get("top_n", 10)
+    global_top_n = general.get("top_n", 10)
     top_n = params.get("top_n", global_top_n)
     model_name = params.get("model_name", "all-MiniLM-L6-v2")
 
@@ -102,14 +102,18 @@ def keybert_extraction(config: Dict[str, Any]) -> pd.DataFrame:
     all_concepts = []
     all_scores = []
 
-    for idx, text in tqdm(enumerate(texts), total=len(texts), desc="KeyBERT extraction"):
+    for idx, text in tqdm(
+        enumerate(texts), total=len(texts), desc="KeyBERT extraction"
+    ):
         if not text or text.strip() == "":
             all_concepts.append([])
             all_scores.append([])
             continue
 
         try:
-            concepts, scores = _extract_single_document_keybert(text, kw_model, params, top_n)
+            concepts, scores = _extract_single_document_keybert(
+                text, kw_model, params, top_n
+            )
             all_concepts.append(concepts)
             all_scores.append(scores)
         except Exception as e:
@@ -117,14 +121,10 @@ def keybert_extraction(config: Dict[str, Any]) -> pd.DataFrame:
             all_concepts.append([])
             all_scores.append([])
 
-    # Build result DataFrame
-    result = pd.DataFrame({
-        general["id_column"]: df[general["id_column"]],
-        general["title_column"]: df[general["title_column"]],
-        general["abstract_column"]: df[general["abstract_column"]],
-        general["output_raw_concepts_column"]: all_concepts,
-        general["output_concept_scores_column"]: all_scores,
-    })
+    df[general["output_raw_concepts_column"]] = all_concepts
+    df[general["output_concept_scores_column"]] = all_scores
 
-    logger.info(f"KeyBERT extraction complete. Extracted concepts for {len(result)} documents.")
-    return result
+    logger.info(
+        f"KeyBERT extraction complete. Extracted concepts for {len(df)} documents."
+    )
+    return df

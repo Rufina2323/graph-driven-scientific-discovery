@@ -1,16 +1,15 @@
 general:
-  input_file: "data/raw/accepted_iclr_articles_until_2025.csv"    # CSV with columns: title, abstract
-  output_dir: "data/interim/"
+  input_file: "data/raw/accepted_iclr_articles.csv"    # CSV with columns: title, abstract
+  output_dir: "data/extracted_concepts/"
   title_column: "title"
   abstract_column: "abstract"
   output_raw_concepts_column: "raw_concepts"
   output_concept_scores_column: "concept_scores"
-  id_column: "id"
   combine_title_abstract: true                # If true, concatenate title + abstract as input text
   separator: " . "                            # Separator when combining title and abstract
 
 concept_extraction:
-  methods: ["keybert", "rake", "keybert", "yake"]     # Options: rake, keybert, yake, llm
+  methods: ["keybert", "rake", "yake", "llm"]     # Options: rake, keybert, yake, llm
   top_n: 10                                           # Default number of top concepts to extract per document
 
 rake:
@@ -49,9 +48,9 @@ llm:
     model: "openai/gpt-oss-120b"
     api_key_env: "OPENAI_API_KEY"          # Environment variable name for API key
     temperature: 1.0
-    reasoning_effort: high
+    reasoning: True
     
-  developer_prompt_template: |
+  system_prompt_template: |
     You are an expert scientific text analyst.
 
     Your task is to extract key scientific concepts, keywords, and domain-specific terms from a research paper's title and abstract.
@@ -67,7 +66,7 @@ llm:
     Output format:
     - Return ONLY the concepts
     - One concept per line
-    - Limit output to 10 concepts maximum
+    - Limit output to {top_n} concepts maximum
     - No numbering, no bullets, no additional formatting
     - Concepts must be separated strictly by newline characters ("\n")
 
