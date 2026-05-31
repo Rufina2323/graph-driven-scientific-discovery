@@ -34,3 +34,5 @@ MANIFEST
 
 # Environment
 .venv
+
+.ruff_cache/
