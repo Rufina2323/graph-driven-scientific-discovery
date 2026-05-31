@@ -4,7 +4,7 @@ import yake
 from typing import Dict, Any, List, Tuple
 from tqdm import tqdm
 
-from concept_extractors.base import prepare_texts
+from src.concept_extractors.base import prepare_texts
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +59,14 @@ def yake_extraction(config: Dict[str, Any]) -> pd.DataFrame:
         config: Configuration dictionary loaded from YAML.
 
     Returns:
-        DataFrame with columns: id, title, abstract, concepts, concept_scores.
+        DataFrame with additional columns: concepts, concept_scores.
     """
     logger.info("Starting YAKE concept extraction")
 
     # Load parameters
     general = config["general"]
     params = config.get("yake", {})
-    global_top_n = config["concept_extraction"].get("top_n", 10)
+    global_top_n = general.get("top_n", 10)
     top_n = params.get("top_n", global_top_n)
 
     # Read input data
@@ -96,14 +96,10 @@ def yake_extraction(config: Dict[str, Any]) -> pd.DataFrame:
             all_concepts.append([])
             all_scores.append([])
 
-    # Build result DataFrame
-    result = pd.DataFrame({
-        general["id_column"]: df[general["id_column"]],
-        general["title_column"]: df[general["title_column"]],
-        general["abstract_column"]: df[general["abstract_column"]],
-        general["output_raw_concepts_column"]: all_concepts,
-        general["output_concept_scores_column"]: all_scores,
-    })
+    df[general["output_raw_concepts_column"]] = all_concepts
+    df[general["output_concept_scores_column"]] = all_scores
 
-    logger.info(f"YAKE extraction complete. Extracted concepts for {len(result)} documents.")
-    return result
+    logger.info(
+        f"YAKE extraction complete. Extracted concepts for {len(df)} documents."
+    )
+    return df
