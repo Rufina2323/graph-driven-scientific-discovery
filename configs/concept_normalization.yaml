@@ -1,12 +1,17 @@
-input_file: "data/interim/llm/raw_concepts_only_2025.csv"
-output_file: "data/interim/llm/normalized_concepts_only_2025.csv"
-clusters_output_file: "data/interim/llm/clusters_only_2025.csv"
-# Path to existing normalization state (null on first run, auto-created)
-state_file: "data/interim/llm/normalization_state.pkl"
+input_file: "data/extracted_concepts/rake/raw_concepts.csv"
+output_file: "data/extracted_concepts/rake/normalized_concepts.csv"
+clusters_output_file: "data/extracted_concepts/rake/clusters.csv"
+# Path to normalization state
+state_file: "data/extracted_concepts/rake/normalization_state.pkl"
 
 columns:
   id: "id"
-  raw_concepts: "raw_concepts"         # Column with list of concepts stored as string
+  raw_concepts: "raw_concepts"                        # Column with list of concepts stored as string
+  year: "year"                                        # Column with article year
+  normalized_concepts_column: "normalized_concepts"   # Column with normalized concepts
+  cluster_ids_column: "cluster_ids"                   # Column with cluster ids from normalized concepts
+
+target_year: 2025
 
 spacy_model: "en_core_web_sm"
 embedding_model: "all-MiniLM-L6-v2"
