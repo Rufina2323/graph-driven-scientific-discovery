@@ -1,0 +1,28 @@
+# Path to the draft text file to assess (set via --draft_path CLI arg or here)
+draft_path: drafts/domain_gap__x__image_retrieval_draft.txt
+
+# LLM backend: "claude" (Claude Opus) or "gpt" (GPT-4o / GPT-5)
+model: claude
+
+# Scoring criteria and their weights (must sum to 1.0)
+criteria:
+  novelty:
+    description: "How original and non-obvious is the proposed research idea?"
+    weight: 0.25
+  clarity:
+    description: "How clearly and precisely is the abstract written?"
+    weight: 0.20
+  feasibility:
+    description: "How realistic and executable is the plan of actions?"
+    weight: 0.20
+  scientific_rigor:
+    description: "How technically sound and methodologically solid is the proposal?"
+    weight: 0.20
+  impact:
+    description: "How significant would the contribution be to the field?"
+    weight: 0.15
+
+# Where to save the assessment JSON
+output_path: drafts/domain_gap__x__image_retrieval_draft_assessment.json
+
+max_tokens: 2048

@@ -1,0 +1,11 @@
+pairs_path: "data/link_prediction/llm_concept_results/concept_pairs.csv"   # CSV file with concept pairs (columns: concept_a, concept_b)
+
+# LLM backend: "claude" (Claude Opus 4.5) or "gpt" (GPT-5.4)
+model: claude
+max_tokens: 2048
+
+n_examples: 3   # Number of recent example papers to retrieve per concept (3 for concept A and 3 for concept B)
+
+data_path: data/extracted_concepts/llm/normalized_concepts.csv    # Data source
+
+drafts_dir: "drafts"    # Directory where drafts and prompts will be stored
