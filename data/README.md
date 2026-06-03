@@ -14,7 +14,6 @@ https://disk.yandex.ru/d/JsG28eNwXEGMLA
 
 ```bash
 data/
-├── README.md              ← you are here
 ├── raw/                   ← original paper data
 ├── extracted_concepts/    ← outputs of the extraction stage
 └── link_prediction/       ← outputs of model training and link prediction stages
